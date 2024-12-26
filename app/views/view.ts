@@ -1,13 +1,25 @@
 export abstract class View<T> {
 
     protected elemento: HTMLElement;
-    
-    constructor(seletor: string) {
-        this.elemento = document.querySelector(seletor);
+    private _leak = false;
+
+    constructor(seletor: string, leak: boolean) {
+        const elemento = document.querySelector(seletor);
+        if (elemento) {
+            this.elemento = elemento as HTMLElement;
+        } else {
+            throw Error(`O seletor ${seletor} não existe no DOM.`);
+        }
+        if (this._leak) {
+            this._leak = leak;
+        }
     }
 
     public update(model: T): void {
-        const template = this.template(model)
+        let template = this.template(model);
+        if (this._leak) {
+            template = template.replace(/<script>[\s\S]*?<\/script>/, '');
+        }
         this.elemento.innerHTML = template;
     }
 
