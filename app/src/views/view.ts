@@ -1,26 +1,35 @@
+import { inspect } from "../decorators/inspect.js";
+import { logarTempoExecucao } from "../decorators/logar-tempo-execucao.js";
+
 export abstract class View<T> {
 
     protected elemento: HTMLElement;
-    private _leak = false;
+    private escapar = false;
 
-    constructor(seletor: string, leak: boolean) {
+    constructor(seletor: string, escapar?: boolean) {
         const elemento = document.querySelector(seletor);
         if (elemento) {
             this.elemento = elemento as HTMLElement;
         } else {
-            throw Error(`O seletor ${seletor} não existe no DOM.`);
+            throw Error(`Seletor ${seletor} não existe no DOM. Verifique`);
         }
-        if (this._leak) {
-            this._leak = leak;
+        if (escapar) {
+            this.escapar = escapar;
         }
     }
 
+    @inspect()
+    @logarTempoExecucao(true)
     public update(model: T): void {
+        const t1 = performance.now();
         let template = this.template(model);
-        if (this._leak) {
-            template = template.replace(/<script>[\s\S]*?<\/script>/, '');
+        if (this.escapar) {
+            template = template
+                .replace(/<script>[\s\S]*?<\/script>/, '');
         }
         this.elemento.innerHTML = template;
+        const t2 = performance.now();
+        console.log(`Tempo de execução do método update: ${(t2 - t1) / 1000} segundos`);
     }
 
     protected abstract template(model: T): string;
